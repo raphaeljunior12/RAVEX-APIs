@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: ravex-apis
+    runtime: node
+    plan: free
+    branch: main
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /status
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: "24"
