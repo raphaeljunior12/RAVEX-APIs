@@ -106,9 +106,65 @@ async function buscarPartidas(idCompeticao) {
     }
 }
 
+async function buscarTabela(idCompeticao) {
+    const config = obterConfiguracao();
+    const competicao = obterCompeticao(idCompeticao);
+
+    if (!config.configurado) {
+        throw new Error("Fonte de futebol não configurada.");
+    }
+
+    if (!competicao) {
+        throw new Error("Competição não suportada pela RAVEX Futebol.");
+    }
+
+    const chaveCache = `futebol:tabela:${idCompeticao}`;
+    const armazenado = cache.obter(chaveCache);
+
+    if (armazenado) {
+        return armazenado;
+    }
+
+    const endpoint =
+        `${config.url}/getbltable/` +
+        `${encodeURIComponent(competicao.liga)}/` +
+        `${encodeURIComponent(competicao.temporada)}`;
+
+    const dados = await requisitarJson(endpoint, {
+        headers: obterCabecalhos(),
+        timeout: 15000
+    });
+
+    if (!Array.isArray(dados)) {
+        throw new Error("A fonte esportiva retornou uma tabela em formato inesperado.");
+    }
+
+    const tabela = dados.map((time, indice) => ({
+        posicao: indice + 1,
+        id: time.teamInfoId ?? null,
+        nome: time.teamName || time.shortName || "Desconhecido",
+        nomeCurto: time.shortName || null,
+        escudo: String(time.teamIconUrl || "").startsWith("https://")
+            ? time.teamIconUrl
+            : null,
+        pontos: Number(time.points || 0),
+        jogos: Number(time.matches || 0),
+        vitorias: Number(time.won || 0),
+        empates: Number(time.draw || 0),
+        derrotas: Number(time.lost || 0),
+        golsPro: Number(time.goals || 0),
+        golsContra: Number(time.opponentGoals || 0),
+        saldoGols: Number(time.goalDiff || 0)
+    }));
+
+    cache.definir(chaveCache, tabela, 120000);
+    return tabela;
+}
+
 module.exports = {
     obterConfiguracao,
     obterStatusSeguro,
     obterCabecalhos,
-    buscarPartidas
+    buscarPartidas,
+    buscarTabela
 };

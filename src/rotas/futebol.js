@@ -117,6 +117,30 @@ async function rotaFutebol(req, res, url, responderJson) {
         return true;
     }
 
+    if (url.pathname === '/api/futebol/tabela') {
+        const competicao = url.searchParams.get('competicao');
+
+        if (!competicao || competicao.trim().length < 2) {
+            responderJson(res, 400, {
+                status: false,
+                erro: 'Informe a competição usando ?competicao=premier.'
+            });
+            return true;
+        }
+
+        try {
+            const dados = await futebol.tabela(competicao);
+            responderJson(res, 200, dados);
+        } catch (erro) {
+            responderJson(res, 400, {
+                status: false,
+                erro: erro?.message || 'Não foi possível consultar a tabela.'
+            });
+        }
+
+        return true;
+    }
+
     if (url.pathname === '/api/futebol/assistir') {
         const time = url.searchParams.get('time');
 

@@ -280,6 +280,23 @@ async function ondeAssistir(nomeTime) {
     };
 }
 
+async function tabela(idCompeticao) {
+    const competicao = String(idCompeticao || "").trim().toLowerCase();
+
+    if (!competicao) {
+        throw new Error("Informe a competição.");
+    }
+
+    const classificacao = await futebolAPI.buscarTabela(competicao);
+
+    return {
+        status: true,
+        competicao,
+        total: classificacao.length,
+        tabela: classificacao
+    };
+}
+
 module.exports = {
     obterStatus,
     jogosHoje,
@@ -287,5 +304,6 @@ module.exports = {
     aoVivo,
     buscarTime,
     proximosJogos,
-    ondeAssistir
+    ondeAssistir,
+    tabela
 };
