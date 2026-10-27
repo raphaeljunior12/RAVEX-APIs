@@ -1,4 +1,5 @@
 const futebolAPI = require('./provedores/futebolAPI');
+const transmissaoAPI = require('./provedores/transmissaoAPI');
 const { listarCompeticoes } = require('./provedores/competicoes');
 
 const SERVICO = 'RAVEX Futebol';
@@ -194,24 +195,40 @@ async function proximosJogos(nomeTime) {
 }
 
 async function ondeAssistir(nomeTime) {
-    const busca = String(nomeTime || '').trim();
+    const busca = String(nomeTime || "").trim();
+    if (busca.length < 2) throw new Error("Informe o nome do time.");
 
-    if (busca.length < 2) {
-        throw new Error('Informe o nome do time.');
-    }
+    const hoje = new Date();
+    const fim = new Date(hoje.getTime() + 14 * 86400000);
+    const iso = d => d.toISOString().slice(0, 10);
 
-    const proximos = await proximosJogos(busca);
-    const jogo = proximos.jogos[0] || null;
+    const fixture = await transmissaoAPI.buscarFixtureTime(busca, iso(hoje), iso(fim));
+    if (!fixture) return {
+        status: true, busca, disponivel: false, jogo: null,
+        transmissoes: [],
+        mensagem: "Nenhuma partida com transmissão disponível foi encontrada nos próximos 14 dias."
+    };
+
+    const transmissoes = await transmissaoAPI.buscarTransmissoesFixture(fixture.id);
+    const participantes = Array.isArray(fixture.participants) ? fixture.participants : [];
+    const casa = participantes.find(p => p.meta?.location === "home");
+    const fora = participantes.find(p => p.meta?.location === "away");
 
     return {
         status: true,
         busca,
-        disponivel: false,
-        jogo,
-        transmissao: null,
-        mensagem: jogo
-            ? 'Ainda não há uma fonte oficial de transmissão configurada na RAVEX-API.'
-            : 'Nenhum próximo jogo encontrado para consultar transmissão.'
+        disponivel: transmissoes.length > 0,
+        jogo: {
+            id: fixture.id,
+            nome: fixture.name || null,
+            data: fixture.starting_at || null,
+            casa: casa ? { nome: casa.name, escudo: casa.image_path || null } : null,
+            fora: fora ? { nome: fora.name, escudo: fora.image_path || null } : null
+        },
+        transmissoes,
+        mensagem: transmissoes.length
+            ? "Transmissões oficiais encontradas."
+            : "Nenhuma transmissão oficial cadastrada para esta partida."
     };
 }
 
