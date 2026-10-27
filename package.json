@@ -1,0 +1,16 @@
+{
+  "name": "ravex-apis",
+  "version": "1.0.0",
+  "description": "RAVEX-APIs — plataforma oficial de APIs e serviços do ecossistema RAVEX",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "node src/app.js"
+  },
+  "keywords": [],
+  "author": "Raphael Júnior",
+  "license": "MIT",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=20"
+  }
+}

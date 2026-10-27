@@ -1,0 +1,7 @@
+APIs.env
+node_modules/
+*.log
+*.pid
+
+# BACKUPS LOCAIS
+*.bak*
