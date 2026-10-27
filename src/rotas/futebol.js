@@ -31,6 +31,19 @@ async function rotaFutebol(req, res, url, responderJson) {
         return true;
     }
 
+    if (url.pathname === '/api/futebol/amanha') {
+        try {
+            const dados = await futebol.jogosAmanha();
+            responderJson(res, 200, dados);
+        } catch (erro) {
+            responderJson(res, 502, {
+                status: false,
+                erro: 'Não foi possível consultar os jogos de amanhã.'
+            });
+        }
+        return true;
+    }
+
     if (url.pathname === '/api/futebol/aovivo') {
         try {
             const dados = await futebol.aoVivo();

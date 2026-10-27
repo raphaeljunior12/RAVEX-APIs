@@ -81,6 +81,54 @@ async function jogosHoje() {
     };
 }
 
+async function jogosAmanha() {
+    const agora = new Date();
+    const amanha = new Date(agora.getTime() + (24 * 60 * 60 * 1000));
+    const dataAmanha = dataLocalISO(amanha);
+    const competicoes = listarCompeticoes();
+
+    const resultados = await Promise.allSettled(
+        competicoes.map(c => futebolAPI.buscarPartidas(c.id))
+    );
+
+    const jogos = [];
+    let consultasOK = 0;
+    let consultasFalharam = 0;
+
+    for (const resultado of resultados) {
+        if (resultado.status !== "fulfilled") {
+            consultasFalharam++;
+            continue;
+        }
+
+        consultasOK++;
+
+        for (const jogo of resultado.value) {
+            if (!jogo.data) continue;
+
+            const dataJogo = dataLocalISO(new Date(jogo.data));
+
+            if (dataJogo === dataAmanha) {
+                jogos.push(jogo);
+            }
+        }
+    }
+
+    jogos.sort((a, b) => new Date(a.data) - new Date(b.data));
+
+    return {
+        status: true,
+        data: dataAmanha,
+        total: jogos.length,
+        consultas: {
+            competicoes: competicoes.length,
+            sucesso: consultasOK,
+            falhas: consultasFalharam
+        },
+        jogos
+    };
+}
+
 async function aoVivo() {
     const competicoes = listarCompeticoes();
     const resultados = await Promise.allSettled(
@@ -235,6 +283,7 @@ async function ondeAssistir(nomeTime) {
 module.exports = {
     obterStatus,
     jogosHoje,
+    jogosAmanha,
     aoVivo,
     buscarTime,
     proximosJogos,
