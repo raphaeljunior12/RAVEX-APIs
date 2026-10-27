@@ -9,5 +9,9 @@ services:
     healthCheckPath: /status
     autoDeploy: true
     envVars:
+      - key: FUTEBOL_API_NOME
+        value: "OpenLigaDB"
+      - key: FUTEBOL_API_URL
+        value: "https://api.openligadb.de"
       - key: NODE_VERSION
         value: "24"
