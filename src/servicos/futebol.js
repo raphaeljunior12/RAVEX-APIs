@@ -1,6 +1,7 @@
 const futebolAPI = require('./provedores/futebolAPI');
 const transmissaoAPI = require('./provedores/transmissaoAPI');
 const { listarCompeticoes } = require('./provedores/competicoes');
+const videoAPI = require("./provedores/videoAPI");
 
 const SERVICO = 'RAVEX Futebol';
 
@@ -426,6 +427,30 @@ async function ravexLive(nomeTime) {
     };
 }
 
+async function verJogoOnline(nomeTime1, nomeTime2) {
+    const time1 = String(nomeTime1 || "").trim();
+    const time2 = String(nomeTime2 || "").trim();
+
+    if (time1.length < 2 || time2.length < 2) {
+        throw new Error("Informe os dois times do confronto.");
+    }
+
+    const resultado = await videoAPI.buscarVideoConfronto(time1, time2);
+
+    return {
+        status: true,
+        servico: "RAVEX Vídeos",
+        fonte: "Highlightly",
+        busca: {
+            time1,
+            time2
+        },
+        encontrado: resultado.encontrado,
+        video: resultado.video,
+        alternativas: resultado.alternativas
+    };
+}
+
 module.exports = {
     obterStatus,
     jogosHoje,
@@ -439,5 +464,6 @@ module.exports = {
     calendario,
     time,
     confronto,
-    ravexLive
+    ravexLive,
+    verJogoOnline
 };

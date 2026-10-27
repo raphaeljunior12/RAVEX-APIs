@@ -245,6 +245,36 @@ async function rotaFutebol(req, res, url, responderJson) {
         return true;
     }
 
+    if (url.pathname === '/api/futebol/verjogoonline') {
+        const time1 = url.searchParams.get('time1');
+        const time2 = url.searchParams.get('time2');
+
+        if (!time1 || !time2 || time1.trim().length < 2 || time2.trim().length < 2) {
+            responderJson(res, 400, {
+                status: false,
+                erro: 'Informe ?time1=TimeA&time2=TimeB.'
+            });
+            return true;
+        }
+
+        try {
+            const dados = await futebol.verJogoOnline(time1, time2);
+
+            if (!dados.encontrado) {
+                dados.mensagem = 'Nenhum highlight disponível para este confronto.';
+            }
+
+            responderJson(res, 200, dados);
+        } catch (erro) {
+            responderJson(res, 502, {
+                status: false,
+                erro: erro?.message || 'Não foi possível consultar os highlights.'
+            });
+        }
+
+        return true;
+    }
+
     if (url.pathname === '/api/futebol/ravexlive') {
         const time = url.searchParams.get('time');
 

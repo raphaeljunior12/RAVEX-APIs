@@ -5,3 +5,6 @@ node_modules/
 
 # BACKUPS LOCAIS
 *.bak*
+
+# BACKUPS LOCAIS
+backups/
