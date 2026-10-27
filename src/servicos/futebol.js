@@ -297,6 +297,135 @@ async function tabela(idCompeticao) {
     };
 }
 
+async function artilheiros(idCompeticao) {
+    const competicao = String(idCompeticao || "").trim().toLowerCase();
+    if (!competicao) throw new Error("Informe a competição.");
+
+    const jogadores = await futebolAPI.buscarArtilheiros(competicao);
+
+    return {
+        status: true,
+        competicao,
+        total: jogadores.length,
+        artilheiros: jogadores
+    };
+}
+
+async function calendario(idCompeticao) {
+    const competicao = String(idCompeticao || "").trim().toLowerCase();
+    if (!competicao) throw new Error("Informe a competição.");
+
+    const jogos = await futebolAPI.buscarPartidas(competicao);
+
+    return {
+        status: true,
+        competicao,
+        total: jogos.length,
+        jogos: [...jogos].sort((a, b) => new Date(a.data) - new Date(b.data))
+    };
+}
+
+async function time(nomeTime) {
+    const resultado = await buscarTime(nomeTime);
+    const busca = normalizarTexto(nomeTime);
+
+    const nomes = new Map();
+
+    for (const jogo of resultado.jogos) {
+        for (const equipe of [jogo.casa, jogo.fora]) {
+            if (!equipe?.nome) continue;
+            if (!normalizarTexto(equipe.nome).includes(busca)) continue;
+
+            const chave = normalizarTexto(equipe.nome);
+            if (!nomes.has(chave)) {
+                nomes.set(chave, {
+                    nome: equipe.nome,
+                    escudo: equipe.escudo || null
+                });
+            }
+        }
+    }
+
+    const equipes = [...nomes.values()];
+
+    return {
+        status: true,
+        busca: resultado.busca,
+        encontrado: equipes.length > 0,
+        equipes,
+        totalJogos: resultado.total,
+        jogos: resultado.jogos
+    };
+}
+
+async function confronto(nomeTime1, nomeTime2) {
+    const time1 = normalizarTexto(nomeTime1);
+    const time2 = normalizarTexto(nomeTime2);
+
+    if (time1.length < 2 || time2.length < 2) {
+        throw new Error("Informe os dois times do confronto.");
+    }
+
+    const competicoes = listarCompeticoes();
+    const resultados = await Promise.allSettled(
+        competicoes.map(c => futebolAPI.buscarPartidas(c.id))
+    );
+
+    const encontrados = new Map();
+    let consultasOK = 0;
+    let consultasFalharam = 0;
+
+    for (const resultado of resultados) {
+        if (resultado.status !== "fulfilled") {
+            consultasFalharam++;
+            continue;
+        }
+
+        consultasOK++;
+
+        for (const jogo of resultado.value) {
+            const casa = normalizarTexto(jogo.casa?.nome);
+            const fora = normalizarTexto(jogo.fora?.nome);
+
+            const corresponde =
+                (casa.includes(time1) && fora.includes(time2)) ||
+                (casa.includes(time2) && fora.includes(time1));
+
+            if (corresponde) {
+                encontrados.set(`${jogo.competicao.id}:${jogo.id}`, jogo);
+            }
+        }
+    }
+
+    const jogos = [...encontrados.values()]
+        .sort((a, b) => new Date(b.data) - new Date(a.data));
+
+    return {
+        status: true,
+        times: [
+            String(nomeTime1).trim(),
+            String(nomeTime2).trim()
+        ],
+        total: jogos.length,
+        consultas: {
+            competicoes: competicoes.length,
+            sucesso: consultasOK,
+            falhas: consultasFalharam
+        },
+        jogos
+    };
+}
+
+async function ravexLive(nomeTime) {
+    const resultado = await ondeAssistir(nomeTime);
+
+    return {
+        ...resultado,
+        servico: "RAVEX Live",
+        tipo: "TRANSMISSOES_OFICIAIS"
+    };
+}
+
 module.exports = {
     obterStatus,
     jogosHoje,
@@ -305,5 +434,10 @@ module.exports = {
     buscarTime,
     proximosJogos,
     ondeAssistir,
-    tabela
+    tabela,
+    artilheiros,
+    calendario,
+    time,
+    confronto,
+    ravexLive
 };

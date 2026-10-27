@@ -161,10 +161,61 @@ async function buscarTabela(idCompeticao) {
     return tabela;
 }
 
+async function buscarArtilheiros(idCompeticao) {
+    const config = obterConfiguracao();
+    const competicao = obterCompeticao(idCompeticao);
+
+    if (!config.configurado) {
+        throw new Error("Fonte de futebol não configurada.");
+    }
+
+    if (!competicao) {
+        throw new Error("Competição não suportada pela RAVEX Futebol.");
+    }
+
+    const chaveCache = `futebol:artilheiros:${idCompeticao}`;
+    const armazenado = cache.obter(chaveCache);
+
+    if (armazenado) {
+        return armazenado;
+    }
+
+    const endpoint =
+        `${config.url}/getgoalgetters/` +
+        `${encodeURIComponent(competicao.liga)}/` +
+        `${encodeURIComponent(competicao.temporada)}`;
+
+    const dados = await requisitarJson(endpoint, {
+        headers: obterCabecalhos(),
+        timeout: 15000
+    });
+
+    if (!Array.isArray(dados)) {
+        throw new Error("A fonte esportiva retornou artilheiros em formato inesperado.");
+    }
+
+    const artilheiros = dados
+        .map((jogador, indice) => ({
+            posicao: indice + 1,
+            id: jogador.goalGetterId ?? null,
+            nome: jogador.goalGetterName || "Desconhecido",
+            gols: Number(jogador.goalCount || 0)
+        }))
+        .sort((a, b) => b.gols - a.gols || a.posicao - b.posicao)
+        .map((jogador, indice) => ({
+            ...jogador,
+            posicao: indice + 1
+        }));
+
+    cache.definir(chaveCache, artilheiros, 120000);
+    return artilheiros;
+}
+
 module.exports = {
     obterConfiguracao,
     obterStatusSeguro,
     obterCabecalhos,
     buscarPartidas,
-    buscarTabela
+    buscarTabela,
+    buscarArtilheiros
 };
