@@ -29,6 +29,13 @@ async function requisitarJson(url, opcoes = {}) {
         }
 
         return dados;
+    } catch (erro) {
+        const detalhe = erro?.cause?.message || erro?.cause?.code || erro?.message || 'Erro desconhecido';
+        const novoErro = new Error(`Falha na requisição externa: ${detalhe}`);
+        novoErro.causa = erro?.cause?.code || null;
+        novoErro.status = erro?.status || null;
+        novoErro.dados = erro?.dados || null;
+        throw novoErro;
     } finally {
         clearTimeout(timeout);
     }

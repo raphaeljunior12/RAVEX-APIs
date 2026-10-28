@@ -58,7 +58,7 @@ async function buscarHighlightsData(data, limite = 100) {
     }
 
     const endpoint =
-        `${config.url}/football/highlights?date=${encodeURIComponent(data)}` +
+        `${config.url}/highlights?date=${encodeURIComponent(data)}` +
         `&limit=${Math.min(Math.max(Number(limite) || 40, 1), 40)}`;
 
     const dados = await requisitarJson(endpoint, {
