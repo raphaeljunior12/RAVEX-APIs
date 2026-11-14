@@ -1,6 +1,7 @@
 require("./utilitarios/carregarAPIs")();
 const http = require('http');
 const rotaFutebol = require('./rotas/futebol');
+const rotaIA = require('./rotas/ia');
 
 const HOST = process.env.HOST || '0.0.0.0';
 const PORT = Number(process.env.PORT || 3333);
@@ -20,6 +21,7 @@ const servidor = http.createServer(async (req, res) => {
     const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
 
     if (await rotaFutebol(req, res, url, responderJson)) return;
+        if (await rotaIA(req, res, url, responderJson)) return;
 
     if (req.method === 'GET' && url.pathname === '/') {
         return responderJson(res, 200, {
